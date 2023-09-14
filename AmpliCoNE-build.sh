@@ -29,8 +29,8 @@ o) output=${OPTARG};;
 esac
 done
 
-if [ -z "${chromosome}" ] || [ -z "${reference}" ] || [ -z "${mappability}" ] || [ -z "${repeatmasker}" ] || [ -z "${tandemRepeatFinder}" ] || [ -z "${geneDefinition}" ] || [ -z "${output}" ]; then
-    usage()
+if [ -z "${chromosome}" ] || [ -z "${reference}" ] || [ -z "${mappability}" ] || [ -z "${repeatmasker}" ] || [ -z "${tandemRepeatFinder}" ] || [ -z "${geneDefinition}" ] || [ -z "${output}" ]; then 
+  usage 
 fi
 
 echo "INPUT:

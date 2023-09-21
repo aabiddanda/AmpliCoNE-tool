@@ -29,7 +29,7 @@ chrY[2]=temp
 #Expand the windows to individual positions
 map_val = []
 for row in chrY.itertuples(index=False): #By setting the index parameter to False we can remove the index as the first element of the tuple.
-	map_val+=[float(row[4])]*(int(row[2])-int(row[1]))
+	map_val+=[float(row[3])]*(int(row[2])-int(row[1]))
 
 #print the file
 file = open(str(CHR)+"_MAPPABILITY_bypos.txt", "w")

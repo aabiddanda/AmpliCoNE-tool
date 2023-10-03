@@ -258,14 +258,15 @@ with open(SFile, "rU") as s:
 	for row in s:
 		col=row.rstrip('\n').split("\t") 
 		#Data[int(col[0])]={'Position': int(col[0]), 'Mappability':float(col[2]), 'GC':float(col[1]), 'RSC':int(val[int(col[0])-1]), 'tInformativeSites':int(col[3]) } #Converting 1 based to 0 based by subtracting 1
-		Data[int(col[0])]=[int(col[0]), float(col[2]), float(col[1]), int(val[int(col[0])-1]),int(col[3])]
+		Data[int(float(col[0]))]=[int(float(col[0])), float(col[2]), float(col[1]), int(val[int(float(col[0]))-1]),int(float(col[3]))]
 
 
 Summary_data= pandas.DataFrame.from_dict(Data, orient="index")				
 Summary_data.columns=['Position', 'Mappability', 'GC', 'RSC','Informative']
 Control_data=Summary_data.copy()
 Control_data=Control_data.loc[Control_data['Mappability']==1]
-
+print(Summary_data)
+print(Control_data)
 
 Summary_data=Summary_data.values
 Control_data=Control_data.values

@@ -73,14 +73,24 @@ def Get_Read_Length(bam_file):
 		for read in bamfile.fetch():
 			readlength+=[read.query_length]
 			count+=1
-			if count>=100:
+			if count>size:
 				break
-	return max(set(readlength), key=readlength.count)
+	if len(readlength) > 0:
+            return max(set(readlength), key=readlength.count)
+        else:
+            return 0
 			
 
 if Get_Read_Length(BAM) < 100:
 	print 'ERROR: Read length of the Input BAM is less than required length of 100 bases. (Tested first 1000 reads)'
-	sys.exit(0)
+	AG_out=OUT+"Ampliconic_Summary.txt"
+        with open(AG_out, "w") as AGfile:  
+            AGfile.write("GeneFamily\tCopyNumber(MAP=1)\tCopyNumber(XDG)\n")
+
+        XDG_out=OUT+"XDG_CopyNumber.txt"
+        with open(XDG_out, "w") as XDGfile:  
+            XDGfile.write("Gene\tCopyNumber\n")		
+        sys.exit(0)
 
 	
 #Open the sam file with proper paired reads and filter the reads by alignment
@@ -265,8 +275,8 @@ Summary_data= pandas.DataFrame.from_dict(Data, orient="index")
 Summary_data.columns=['Position', 'Mappability', 'GC', 'RSC','Informative']
 Control_data=Summary_data.copy()
 Control_data=Control_data.loc[Control_data['Mappability']==1]
-print(Summary_data)
-print(Control_data)
+# print(Summary_data)
+# print(Control_data)
 
 Summary_data=Summary_data.values
 Control_data=Control_data.values
@@ -304,29 +314,34 @@ for i in range(1,100):
 
 def Control_region_coverage(Y_Summary_data) : # Ychr_summary=['Position', 'Mappability', 'GC', 'RSC','Informative']
 		Control_region=Y_Summary_data[(Y_Summary_data[:,1]==1).nonzero()] #All sites with mappability one
-		return numpy.mean(Control_region[:,3])
+		return numpy.nan_to_num(numpy.nanmean(Control_region[:,3]))
 	
 
 def Get_Informative_coverage(Gene_info,Y_Summary_data) : 		# Y_Summary_data=['Position', 'Mappability', 'GC', 'RSC','Informative']; Gene_info=[START,	END,	TYPE]
 	Gene_Summary=Y_Summary_data[((Y_Summary_data[:,0]>int(Gene_info[0]))==(Y_Summary_data[:,0]<int(Gene_info[1]))).nonzero()] 		#parse region of the gene (Gene_info[0] is start,Gene_info[1] is end)
 	Informative_data=Gene_Summary[(Gene_Summary[:,4]== 1).nonzero()]		#parse informative sites (Informative=1; 0 otherwise)
-	return [Gene_info[2],numpy.mean(Informative_data[:,3]),str(Gene_info[2])+"_"+str(Gene_info[0])+"_"+str(Gene_info[1])]  			#return(gene_info,mean coverage)
+	print(Gene_info, Informative_data.shape)
+        return [Gene_info[2],numpy.nan_to_num(numpy.nanmean(Informative_data[:,3])),str(Gene_info[2])+"_"+str(Gene_info[0])+"_"+str(Gene_info[1])]  			#return(gene_info,mean coverage)
 
 def Get_ControlGene_coverage(Gene_info,Y_Summary_data) : 		# Y_Summary_data=['Position', 'Mappability', 'GC', 'RSC','Informative']; Gene_info=[START,	END,	TYPE]
 	Gene_Summary=Y_Summary_data[((Y_Summary_data[:,0]>int(Gene_info[0]))==(Y_Summary_data[:,0]<int(Gene_info[1]))).nonzero()] 		#parse region of the gene (Gene_info[0] is start,Gene_info[1] is end)
 	Unique_data=Gene_Summary[(Gene_Summary[:,1]== 1).nonzero()]		#parse sites with mappability 1
-	return [Gene_info[2],numpy.mean(Unique_data[:,3]),str(Gene_info[2])+"_"+str(Gene_info[0])+"_"+str(Gene_info[1])] 
+	print(Gene_info, Unique_data.shape)
+        return [Gene_info[2],numpy.nan_to_num(numpy.nanmean(Unique_data[:,3])),str(Gene_info[2])+"_"+str(Gene_info[0])+"_"+str(Gene_info[1])] 
 
 print "\rObtaining the gene level RSC"
 Control_coverage=Control_region_coverage(GCcor_Summary_data)
+print(GCcor_Summary_data)
+
 
 Temp_Coverage={}
 for genefamily in Family_list:
+        print(genefamily)
 	if genefamily == "CONTROL":
 		for gene in Family_list[genefamily]:
 			Temp_Coverage[gene]=Get_ControlGene_coverage(Gene_list[gene],GCcor_Summary_data)
 	elif len(genefamily) == 1 : #If there are single copy genes in gene_def not annotated as CONTROL, but as gene family with one gene
-		for gene in Family_list[genefamily]:
+                for gene in Family_list[genefamily]:
 			Temp_Coverage[gene]=Get_ControlGene_coverage(Gene_list[gene],GCcor_Summary_data)
 	else:
 		for gene in Family_list[genefamily]:
@@ -335,7 +350,7 @@ for genefamily in Family_list:
 
 Gene_coverage= pandas.DataFrame.from_dict(Temp_Coverage, orient="index")				
 Gene_coverage.columns=['GeneFamily', 'RSCDepth','Gene_ID']
-
+print("Gene coverage")
 XDG_Genes=Gene_coverage.values[(Gene_coverage.values[:,0]=="CONTROL").nonzero()]
 XDG_Control_coverage=numpy.mean(XDG_Genes[:,1])
 
@@ -347,7 +362,7 @@ Allgene_CopyNumber=Allgene.copy()
 Allgene_CopyNumber[:,1]=Allgene_CopyNumber[:,1]/Control_coverage
 Allgene_CopyNumber[Allgene_CopyNumber[:,1].argsort()]
 
-print "\rCaliculating CN values and printing"
+print "\rCalculating CN values and printing"
 Ampliconic_Genes=Gene_coverage.values[(Gene_coverage.values[:,1]!="CONTROL").nonzero()]
 AG_CopyNumber=Ampliconic_Genes.copy()
 AG_CopyNumber[:,1]=AG_CopyNumber[:,1]/Control_coverage
